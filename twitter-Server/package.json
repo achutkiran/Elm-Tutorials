@@ -1,0 +1,21 @@
+{
+  "name": "twitter-Server",
+  "version": "1.0.0",
+  "main": "app.ts",
+  "license": "MIT",
+  "scripts": {
+    "tdev": "nodemon --watch *.ts --exec ts-node app.ts"
+  },
+  "dependencies": {
+    "@types/express": "^4.16.0",
+    "@types/node": "^10.12.18",
+    "axios": "^0.18.0",
+    "body-parser": "^1.18.3",
+    "cors": "^2.8.5",
+    "dotenv": "^6.2.0",
+    "express": "^4.16.4",
+    "nodemon": "^1.18.9",
+    "ts-node": "^7.0.1",
+    "typescript": "^3.2.2"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "@material/button": "^0.42.0",
+    "@material/card": "^0.42.0",
+    "@material/ripple": "^0.42.0",
+    "@material/textfield": "^0.42.1",
+    "@material/top-app-bar": "^0.42.0",
+    "node-sass": "^4.11.0"
+  },
+  "scripts": {
+    "build-css": "node-sass src/ -o src/ --include-path node_modules",
+    "watch-css": "yarn run build-css && node-sass src/ -wo src/ --include-path node_modules"
+  }
+}
