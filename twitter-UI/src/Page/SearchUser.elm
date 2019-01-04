@@ -2,7 +2,7 @@ module Page.SearchUser exposing (Model, Msg(..), User, UserModel(..), init, upda
 
 import Css exposing (..)
 import Html
-import Html.Styled exposing (br, div, i, img, span, text)
+import Html.Styled exposing (Html, br, div, i, img, span, text)
 import Html.Styled.Attributes as Attr
 import Http
 import HttpBuilder exposing (..)
@@ -115,58 +115,109 @@ view model =
             , case model.user of
                 WithUser userData ->
                     div [ Attr.css [ maxWidth (pct 80), marginLeft auto, marginRight auto ] ]
-                        [ Mat.card "user"
-                            (span [ Attr.css [ backgroundColor (hex userData.bgColor), backgroundImage (url userData.bgUrl), color (hex userData.textCol), displayFlex, padding4 (px 0) (px 4) (px 4) (px 8) ] ]
-                                [ span [ Attr.css [ displayFlex, flexDirection column, alignItems flexStart ] ]
-                                    [ img [ Attr.src userData.profileUrl ] []
-                                    , span []
-                                        [ text userData.name
-                                        , if userData.verified then
-                                            i [ Attr.class "material-icons" ] [ text "verified_user" ]
-
-                                          else
-                                            text ""
-                                        ]
-                                    , span [ Attr.css [ marginBottom (px 8) ] ] [ text ("@" ++ userData.screenName) ]
-                                    , span [ Attr.css [ marginBottom (px 8) ] ] [ text userData.description ]
-                                    , span [] [ text (String.slice 4 8 userData.createdOn ++ String.right 4 userData.createdOn) ]
-                                    ]
-                                , span [ Attr.css [ displayFlex, flexGrow (num 1), alignItems center, justifyContent spaceBetween ] ]
-                                    [ span []
-                                        [ text "Followers"
-                                        , br [] []
-                                        , text (String.fromInt userData.nFollowers)
-                                        ]
-                                    , span []
-                                        [ text "Friends"
-                                        , br [] []
-                                        , text (String.fromInt userData.nFriends)
-                                        ]
-                                    , span []
-                                        [ text "Lists"
-                                        , br [] []
-                                        , text (String.fromInt userData.nLists)
-                                        ]
-                                    , span []
-                                        [ text "Favorites"
-                                        , br [] []
-                                        , text (String.fromInt userData.nFav)
-                                        ]
-                                    , span []
-                                        [ text "Status"
-                                        , br [] []
-                                        , text (String.fromInt userData.nStatus)
-                                        ]
-                                    ]
-                                , text userData.lan
-                                ]
-                            )
+                        [ Mat.card "user" (cardViewData userData)
                         ]
 
                 Init ->
                     text ""
             ]
     }
+
+
+cardViewData : User -> Html Msg
+cardViewData userData =
+    span
+        [ Attr.css
+            [ backgroundColor (hex userData.bgColor)
+            , backgroundImage (url userData.bgUrl)
+            , color (hex userData.textCol)
+            , displayFlex
+            , padding4 (px 0) (px 4) (px 4) (px 8)
+            ]
+        ]
+        [ mainUserDetailsView userData
+        , userStatsView userData
+        ]
+
+
+mainUserDetailsView : User -> Html Msg
+mainUserDetailsView userData =
+    span
+        [ Attr.css
+            [ displayFlex
+            , flexDirection column
+            , alignItems flexStart
+            ]
+        ]
+        [ img
+            [ Attr.src userData.profileUrl ]
+            []
+        , span
+            []
+            [ text userData.name
+            , if userData.verified then
+                i [ Attr.class "material-icons" ] [ text "verified_user" ]
+
+              else
+                text ""
+            ]
+        , span
+            [ Attr.css
+                [ marginBottom (px 8) ]
+            ]
+            [ text ("@" ++ userData.screenName) ]
+        , span
+            [ Attr.css
+                [ marginBottom (px 8) ]
+            ]
+            [ text userData.description ]
+        , span
+            []
+            [ text (String.slice 4 8 userData.createdOn ++ String.right 4 userData.createdOn) ]
+        ]
+
+
+userStatsView : User -> Html Msg
+userStatsView userData =
+    span
+        [ Attr.css
+            [ displayFlex
+            , flexGrow (num 1)
+            , alignItems center
+            , justifyContent spaceBetween
+            ]
+        ]
+        [ span
+            []
+            [ text "Followers"
+            , br [] []
+            , text (String.fromInt userData.nFollowers)
+            ]
+        , span
+            []
+            [ text "Friends"
+            , br [] []
+            , text (String.fromInt userData.nFriends)
+            ]
+        , span
+            []
+            [ text "Lists"
+            , br [] []
+            , text (String.fromInt userData.nLists)
+            ]
+        , span
+            []
+            [ text "Favorites"
+            , br [] []
+            , text (String.fromInt userData.nFav)
+            ]
+        , span
+            []
+            [ text "Status"
+            , br [] []
+            , text (String.fromInt userData.nStatus)
+            ]
+        ]
 
 
 fetchUsers : String -> Cmd Msg
