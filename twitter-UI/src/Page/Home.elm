@@ -45,7 +45,7 @@ view : Model -> PageType Msg
 view model =
     { title = "Home - Twitter Demo"
     , content =
-        div []
+        div [ Attr.id "dum" ]
             [ h1 [] [ text "Welcome to HomePage" ]
             , a [ Attr.class "mdc-button mdc-button--raised", Attr.href "/searchTweets" ] [ text "Search Tweets" ]
             , a [ Attr.class "mdc-button mdc-button--raised", Attr.href "/searchUsers" ] [ text "Search Users" ]

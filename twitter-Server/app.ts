@@ -58,7 +58,19 @@ app.get(
             },
             params : req.query
         }).then(out =>{
-            res.status(200).send({"data":out.data.statuses.map(x =>x.full_text)})
+            let data =out.data.statuses.map(x => {
+                return {
+                    "text" : x.full_text,
+                    "createdAt" : x.created_at,
+                    "userName" : x.user.name,
+                    "screenName" : x.user.screen_name,
+                    "profileImage" : x.user.profile_image_url,
+                    "retweet" : x.retweet_count,
+                    "fav" : x.favorite_count
+                }
+            })
+            // res.status(200).send({"data":out.data.statuses.map(x =>x.full_text)})
+            res.status(200).send(data)
         }, (error) =>{
             console.log(error)
         })
@@ -78,7 +90,6 @@ app.get(
             }
         }).then(out =>{
             let data = out.data[0]
-            console.log(data)
             let userOut = {
                 name : data.name,
                 screenName : data.screen_name,
@@ -97,7 +108,7 @@ app.get(
                 textCol : data.profile_text_color
             }
             // console.log(userOut)
-            res.status(200).send(userOut)
+            res.status(200).send([userOut])
         }, (error) =>{
             let eData = error.response.data.errors[0]
             res.status(400).send(eData.message)
@@ -105,3 +116,106 @@ app.get(
         })
     }
 )
+
+
+app.get(
+    '/getFollowers', (req,res) =>{
+        console.log(req.query)
+        axios({
+            method: 'get',
+            url:"https://api.twitter.com/1.1/followers/list.json",
+            headers : {
+                "Authorization":`Bearer ${token}`
+            },
+            params:{
+                "screen_name" : req.query.name,
+                "cursor" : req.query.cursor,
+            }
+        }).then(out =>{
+            console.log(out.data.users[0])
+            let data = out.data.users.map(x => {
+                return { 
+                    name : x.name,
+                    screenName : x.screen_name,
+                    description : x.description,
+                    verified : x.verified,
+                    nFollowers : x.followers_count,
+                    nFriends : x.friends_count,
+                    nLists : x.listed_count,
+                    nFav : x.favourites_count,
+                    nStatus : x.statuses_count,
+                    createdOn : x.created_at,
+                    lan : x.lang,
+                    bgColor : x.profile_background_color,
+                    bgUrl : x.profile_background_image_url,
+                    profileUrl : x.profile_image_url,
+                    textCol : x.profile_text_color
+                }
+            })
+            res.status(200).send(data)
+        },err => {
+            res.status(400).send(err.response.data.errors[0])
+        })
+    }
+)
+
+app.get(
+    '/getFriends', (req,res) =>{
+        console.log(req.query)
+        axios({
+            method: 'get',
+            url:"https://api.twitter.com/1.1/friends/list.json",
+            headers : {
+                "Authorization":`Bearer ${token}`
+            },
+            params:{
+                "screen_name" : req.query.name,
+                "cursor" : req.query.cursor,
+            }
+        }).then(out =>{
+            let data = out.data.users.map(x => {
+                return { 
+                    name : x.name,
+                    screenName : x.screen_name,
+                    description : x.description,
+                    verified : x.verified,
+                    nFollowers : x.followers_count,
+                    nFriends : x.friends_count,
+                    nLists : x.listed_count,
+                    nFav : x.favourites_count,
+                    nStatus : x.statuses_count,
+                    createdOn : x.created_at,
+                    lan : x.lang,
+                    bgColor : x.profile_background_color,
+                    bgUrl : x.profile_background_image_url,
+                    profileUrl : x.profile_image_url,
+                    textCol : x.profile_text_color
+                }
+            })
+            res.status(200).send(data)
+        },err => {
+            res.status(400).send(err.response.data.errors[0])
+        })
+    }
+)
+
+app.get(
+    "/getFav", (req,res) =>{
+        axios({
+            method:"get",
+            url:'https://api.twitter.com/1.1/favorites/list.json',
+            headers:{
+                Authorization : `Bearer ${token}`
+            },
+            params:{
+                "screen_name" : req.query.name
+            }
+        }).then(out =>{
+            console.log(out.data)
+            res.sendStatus(200)
+        },err =>{
+            res.sendStatus(400)
+        })
+    }
+)
+

@@ -1,4 +1,4 @@
-module Page.SearchUser exposing (Model, Msg(..), User, UserModel(..), init, update, view)
+module Page.SearchUser exposing (Model, Msg(..), UserModel(..), init, update, view)
 
 import Css exposing (..)
 import Html
@@ -10,45 +10,48 @@ import Json.Decode as Decode exposing (Decoder, bool, field, int, string)
 import Json.Decode.Pipeline as DecodePipe
 import MaterialComponents.Components as Mat
 import PageType exposing (PageType)
+import Reusable.UserCard as UserCard
+import SharedTypes exposing (User)
 
 
 
 ---- MODEL ----
 
 
-type alias User =
-    { name : String
-    , screenName : String
-    , description : String
-    , verified : Bool
-    , nFollowers : Int
-    , nFriends : Int
-    , nLists : Int
-    , nFav : Int
-    , nStatus : Int
-    , createdOn : String
-    , lan : String
-    , bgColor : String
-    , bgUrl : String
-    , profileUrl : String
-    , textCol : String
-    }
-
-
 type UserModel
     = Init
-    | WithUser User
+    | WithUser (List User)
+
+
+type ContentType
+    = Followers
+    | Friends
+    | Search
 
 
 type alias Model =
     { user : UserModel
     , name : String
+    , contentType : ContentType
     }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( { user = Init, name = "" }, Cmd.none )
+init : String -> ( Model, Cmd Msg )
+init name =
+    let
+        cmd =
+            if name == "" then
+                Cmd.none
+
+            else
+                fetchUsers name
+    in
+    ( { user = Init
+      , name = name
+      , contentType = Search
+      }
+    , cmd
+    )
 
 
 
@@ -59,7 +62,9 @@ type Msg
     = NoOp
     | Input String
     | SearchUser
-    | GotUsers (Result Http.Error User)
+    | FetchFollowers String
+    | FetchFriends String
+    | GotUsers (Result Http.Error (List User))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -81,25 +86,38 @@ update msg model =
                     ( { model | user = WithUser out }, Cmd.none )
 
                 Err error ->
-                    let
-                        errors =
-                            case error of
-                                Http.Timeout ->
-                                    Debug.log "error" "timeout"
+                    errorHandler error model
 
-                                Http.NetworkError ->
-                                    Debug.log "error" "networkError"
+        FetchFollowers name ->
+            fetchFollowers name
+                |> (\cmd -> ( model, cmd ))
 
-                                Http.BadPayload err data ->
-                                    Debug.log "error" err
+        FetchFriends name ->
+            fetchFriends name
+                |> (\cmd -> ( model, cmd ))
 
-                                Http.BadUrl err ->
-                                    Debug.log "error" "badurl"
 
-                                Http.BadStatus code ->
-                                    Debug.log "error" code.body
-                    in
-                    ( model, Cmd.none )
+errorHandler : Http.Error -> Model -> ( Model, Cmd Msg )
+errorHandler error model =
+    let
+        errors =
+            case error of
+                Http.Timeout ->
+                    Debug.log "error" "timeout"
+
+                Http.NetworkError ->
+                    Debug.log "error" "networkError"
+
+                Http.BadPayload err data ->
+                    Debug.log "error" err
+
+                Http.BadUrl err ->
+                    Debug.log "error" "badurl"
+
+                Http.BadStatus code ->
+                    Debug.log "error" code.body
+    in
+    ( model, Cmd.none )
 
 
 
@@ -110,13 +128,28 @@ view : Model -> PageType Msg
 view model =
     { title = "User Search"
     , content =
-        div [ Attr.css [ marginTop (px 9) ] ]
+        div
+            [ Attr.css
+                [ marginTop (px 8)
+                ]
+            ]
             [ Mat.textField "Enter User name" Input SearchUser "search"
             , case model.user of
                 WithUser userData ->
-                    div [ Attr.css [ maxWidth (pct 80), marginLeft auto, marginRight auto ] ]
-                        [ Mat.card "user" (cardViewData userData)
+                    div
+                        [ Attr.css
+                            [ maxWidth (pct 80)
+                            , marginLeft auto
+                            , marginRight auto
+                            , marginTop (px 8)
+                            ]
                         ]
+                        (List.map
+                            (\user ->
+                                UserCard.view user (UserCard.Callback FetchFollowers FetchFriends NoOp NoOp NoOp)
+                            )
+                            userData
+                        )
 
                 Init ->
                     text ""
@@ -124,107 +157,11 @@ view model =
     }
 
 
-cardViewData : User -> Html Msg
-cardViewData userData =
-    span
-        [ Attr.css
-            [ backgroundColor (hex userData.bgColor)
-            , backgroundImage (url userData.bgUrl)
-            , color (hex userData.textCol)
-            , displayFlex
-            , padding4 (px 0) (px 4) (px 4) (px 8)
-            ]
-        ]
-        [ mainUserDetailsView userData
-        , userStatsView userData
-        ]
-
-
-mainUserDetailsView : User -> Html Msg
-mainUserDetailsView userData =
-    span
-        [ Attr.css
-            [ displayFlex
-            , flexDirection column
-            , alignItems flexStart
-            ]
-        ]
-        [ img
-            [ Attr.src userData.profileUrl ]
-            []
-        , span
-            []
-            [ text userData.name
-            , if userData.verified then
-                i [ Attr.class "material-icons" ] [ text "verified_user" ]
-
-              else
-                text ""
-            ]
-        , span
-            [ Attr.css
-                [ marginBottom (px 8) ]
-            ]
-            [ text ("@" ++ userData.screenName) ]
-        , span
-            [ Attr.css
-                [ marginBottom (px 8) ]
-            ]
-            [ text userData.description ]
-        , span
-            []
-            [ text (String.slice 4 8 userData.createdOn ++ String.right 4 userData.createdOn) ]
-        ]
-
-
-userStatsView : User -> Html Msg
-userStatsView userData =
-    span
-        [ Attr.css
-            [ displayFlex
-            , flexGrow (num 1)
-            , alignItems center
-            , justifyContent spaceBetween
-            ]
-        ]
-        [ span
-            []
-            [ text "Followers"
-            , br [] []
-            , text (String.fromInt userData.nFollowers)
-            ]
-        , span
-            []
-            [ text "Friends"
-            , br [] []
-            , text (String.fromInt userData.nFriends)
-            ]
-        , span
-            []
-            [ text "Lists"
-            , br [] []
-            , text (String.fromInt userData.nLists)
-            ]
-        , span
-            []
-            [ text "Favorites"
-            , br [] []
-            , text (String.fromInt userData.nFav)
-            ]
-        , span
-            []
-            [ text "Status"
-            , br [] []
-            , text (String.fromInt userData.nStatus)
-            ]
-        ]
-
-
 fetchUsers : String -> Cmd Msg
 fetchUsers name =
     HttpBuilder.get "http://localhost:4000/getUsers"
         |> withQueryParam "name" name
-        |> withExpectJson userDecoder
+        |> withExpectJson (Decode.list userDecoder)
         |> send GotUsers
 
 
@@ -243,6 +180,22 @@ userDecoder =
         |> DecodePipe.required "createdOn" string
         |> DecodePipe.required "lan" string
         |> DecodePipe.required "bgColor" string
-        |> DecodePipe.required "bgUrl" string
+        |> DecodePipe.optional "bgUrl" string ""
         |> DecodePipe.required "profileUrl" string
         |> DecodePipe.required "textCol" string
+
+
+fetchFollowers : String -> Cmd Msg
+fetchFollowers name =
+    HttpBuilder.get "http://localhost:4000/getFollowers"
+        |> withQueryParams [ ( "name", name ), ( "cursor", "-1" ) ]
+        |> withExpectJson (Decode.list userDecoder)
+        |> send GotUsers
+
+
+fetchFriends : String -> Cmd Msg
+fetchFriends name =
+    HttpBuilder.get "http://localhost:4000/getFriends"
+        |> withQueryParams [ ( "name", name ), ( "cursor", "-1" ) ]
+        |> withExpectJson (Decode.list userDecoder)
+        |> send GotUsers

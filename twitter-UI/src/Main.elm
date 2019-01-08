@@ -28,13 +28,14 @@ type Page
 
 type alias Model =
     { key : Nav.Key
+    , uName : String
     , page : Page
     }
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    changePage (urlToRoute url) { key = key, page = NotFound }
+    changePage (urlToRoute url) { key = key, uName = "", page = NotFound }
 
 
 
@@ -71,6 +72,9 @@ update msg model =
 
                 _ ->
                     ( model, Cmd.none )
+
+        SearchTweetsMsg (SearchTweets.ToMain (SearchTweets.NavToUser userName)) ->
+            ( { model | uName = userName }, Cmd.none )
 
         SearchTweetsMsg subMsg ->
             case model.page of
@@ -169,7 +173,7 @@ changePage route model =
                 |> updateWith SearchTweets SearchTweetsMsg model
 
         Route.SearchUsers ->
-            SearchUsers.init
+            SearchUsers.init model.uName
                 |> updateWith SearchUsers SearchUsersMsg model
 
         Route.NotFound ->
