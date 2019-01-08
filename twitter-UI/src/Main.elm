@@ -13,6 +13,7 @@ import Page.SearchUser as SearchUsers
 import PageType exposing (PageType)
 import Route exposing (..)
 import Url
+import Url.Builder
 
 
 
@@ -74,7 +75,9 @@ update msg model =
                     ( model, Cmd.none )
 
         SearchTweetsMsg (SearchTweets.ToMain (SearchTweets.NavToUser userName)) ->
-            ( { model | uName = userName }, Cmd.none )
+            Url.Builder.absolute [ "searchUsers" ] []
+                |> Nav.pushUrl model.key
+                |> (\cmd -> ( { model | uName = userName }, cmd ))
 
         SearchTweetsMsg subMsg ->
             case model.page of
